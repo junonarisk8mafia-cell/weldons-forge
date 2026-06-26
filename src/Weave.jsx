@@ -35,8 +35,8 @@ const buildPaths = (patternId, matType) => {
   const isVert = matType === "fillet";
 
   // すみ肉は垂直板のx中心=160
-  const CX = 160; // vertical center x
-  const CY = matType === "groove" ? 138 : 158; // horizontal center y
+  const CX = matType === "fillet" ? 148 : 160;
+  const CY = matType === "groove" ? 120 : matType === "fillet" ? 183 : matType === "buildup" ? 155 : 158;
 
   switch (patternId) {
     case "stringer":
