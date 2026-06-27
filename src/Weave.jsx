@@ -14,10 +14,29 @@ const buildFlatPath = (patternId, CY) => {
     case "zigzag":     { const A=22,S=20; return h(CY,(x,cy)=>{const c=((x-22)%S)/S;return cy+(c<0.5?(c*2-0.5):(1.5-c*2))*A*2;}); }
     case "semicircle": { const R=18,S=34; return h(CY,(x,cy)=>{const c=((x-22)%S)/S;return cy-Math.sin(c*Math.PI)*R;}); }
     case "cshape":     { const u=[[0,0],[5,-8],[10,-15],[15,-20],[20,-23],[25,-20],[30,-15],[35,-8],[40,0]]; const p=[]; let ox=22; while(ox+40<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=40;} return p; }
-    case "figure8":    return h(CY,(x,cy)=>{const t=(x-22)/276;const ph=t*(276/50)*Math.PI*2;return cy+Math.sin(ph)*19*Math.cos(ph/2);});
+    case "figure8":    {
+      // 8の字: 左ループ→右ループを繰り返しながら前進
+      // 1サイクル=48px: 左弧(24px前進)→右弧(24px前進)
+      const unit = [
+        [0,0],[3,-6],[6,-11],[9,-15],[12,-16],[15,-15],[18,-11],[21,-6],[24,0],
+        [27,6],[30,11],[33,15],[36,16],[39,15],[42,11],[45,6],[48,0]
+      ];
+      const p=[]; let ox=22;
+      while(ox+48<=298){ unit.forEach(([dx,dy])=>p.push([ox+dx,CY+dy])); ox+=48; }
+      return p;
+    }
     case "wave":       return h(CY,(x,cy)=>cy+Math.sin((x-22)/38*Math.PI*2)*15);
     case "triangle":   { const u=[[0,0],[7,-12],[14,-22],[21,-27],[28,-22],[35,-12],[42,0]]; const p=[]; let ox=22; while(ox+42<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=42;} return p; }
-    case "diamond":    { const u=[[0,0],[8,-13],[16,-23],[24,-30],[32,-23],[40,-13],[48,0],[56,13],[64,23],[72,30],[80,23],[88,13],[96,0]]; const p=[]; let ox=22; while(ox+96<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=96;} return p; }
+    case "diamond":    {
+      // ダイヤ形: 菱形(上→右端→下→左端)を繰り返しながら前進
+      const unit = [
+        [0,0],[4,-8],[8,-16],[12,-22],[16,-26],[20,-22],[24,-16],[28,-8],
+        [32,0],[36,8],[40,16],[44,22],[48,26],[52,22],[56,16],[60,8],[64,0]
+      ];
+      const p=[]; let ox=22;
+      while(ox+64<=298){ unit.forEach(([dx,dy])=>p.push([ox+dx,CY+dy])); ox+=64; }
+      return p;
+    }
     case "whip":       return h(CY,(x,cy)=>{const c=((x-22)%20)/20;return cy+(c<0.3?c/0.3*10:c<0.7?10-(c-0.3)/0.4*20:-10+(c-0.7)/0.3*10);});
     default:           return h(CY,(x,cy)=>cy);
   }
@@ -50,10 +69,16 @@ const buildFilletPath = (patternId) => {
     case "zigzag":     { const A=16,S=20; return h(CY,(x,cy)=>{const c=((x-22)%S)/S;return cy+(c<0.5?(c*2-0.5):(1.5-c*2))*A*2;}); }
     case "semicircle": { const R=14,S=30; return h(CY,(x,cy)=>{const c=((x-22)%S)/S;return cy-Math.sin(c*Math.PI)*R;}); }
     case "cshape":     { const u=[[0,0],[5,-7],[10,-13],[15,-17],[18,-19],[15,-22],[10,-19],[5,-14],[0,-8]]; const p=[]; let ox=22; while(ox+36<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=36;} return p; }
-    case "figure8":    return h(CY,(x,cy)=>{const t=(x-22)/276;const ph=t*(276/50)*Math.PI*2;return cy+Math.sin(ph)*15*Math.cos(ph/2);});
+    case "figure8":    {
+      const unit = [[0,0],[3,-6],[6,-11],[9,-14],[12,-16],[15,-14],[18,-11],[21,-6],[24,0],[27,6],[30,11],[33,14],[36,16],[39,14],[42,11],[45,6],[48,0]];
+      const p=[]; let ox=22; while(ox+48<=298){ unit.forEach(([dx,dy])=>p.push([ox+dx,CY+dy])); ox+=48; } return p;
+    }
     case "wave":       return h(CY,(x,cy)=>cy+Math.sin((x-22)/36*Math.PI*2)*12);
     case "triangle":   { const u=[[0,0],[6,-10],[12,-18],[18,-22],[24,-18],[30,-10],[36,0]]; const p=[]; let ox=22; while(ox+36<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=36;} return p; }
-    case "diamond":    { const u=[[0,0],[7,-11],[14,-19],[21,-24],[28,-19],[35,-11],[42,0],[49,11],[56,19],[63,24],[70,19],[77,11],[84,0]]; const p=[]; let ox=22; while(ox+84<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=84;} return p; }
+    case "diamond":    {
+      const unit = [[0,0],[4,-8],[8,-15],[12,-20],[16,-24],[20,-20],[24,-15],[28,-8],[32,0],[36,8],[40,15],[44,20],[48,24],[52,20],[56,15],[60,8],[64,0]];
+      const p=[]; let ox=22; while(ox+64<=298){ unit.forEach(([dx,dy])=>p.push([ox+dx,CY+dy])); ox+=64; } return p;
+    }
     case "whip":       return h(CY,(x,cy)=>{const c=((x-22)%18)/18;return cy+(c<0.3?c/0.3*9:c<0.7?9-(c-0.3)/0.4*18:-9+(c-0.7)/0.3*9);});
     default:           return h(CY,(x,cy)=>cy);
   }
