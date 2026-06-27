@@ -2,103 +2,45 @@ import { useState, useEffect, useRef } from "react";
 
 // ============================================================
 // パス生成
+// flat:    水平 左→右 y=160
+// fillet:  T継手角部 左→右 y=158（水平板面に沿って）
+// groove:  V開先 上から俯瞰 左→右 y=160（開先中心）
+// buildup: 肉盛り 左→右 y=155
 // ============================================================
-const buildPaths = (patternId, matType, layer) => {
-  const isVert = matType === "fillet";
+const buildPaths = (patternId, matType) => {
+  const CY = matType==="fillet" ? 170 : matType==="groove" ? 155 : matType==="buildup" ? 155 : 162;
 
-  // 溶接中心線の座標
-  // groove: Root=y192, Fill=y174, Cap=y158
-  // fillet: 垂直板左側 x=130, Root=y178, Fill=y163, Cap=y148
-  // flat: y=163
-  // buildup: y=158
+  const hPath=(cy,fn)=>{ const p=[]; for(let x=22;x<=298;x+=3) p.push([x,fn(x,cy)]); return p; };
 
-  let CY = 163;
-  let CX = 130; // fillet用
-
-  if (matType === "groove") {
-    CY = layer==="root" ? 192 : layer==="fill" ? 174 : 158;
-  } else if (matType === "buildup") {
-    CY = 158;
-  } else if (matType === "fillet") {
-    CX = 130;
-    // Root: 角部すぐ y=178, Fill: y=163, Cap: y=148
-  }
-
-  const filletStartY = layer==="root" ? 182 : layer==="fill" ? 167 : 152;
-  const filletEndY   = layer==="root" ? 155 : layer==="fill" ? 138 : 122;
-
-  const hPath=(cy,fn)=>{ const p=[]; for(let x=20;x<=300;x+=3) p.push([x,fn(x,cy)]); return p; };
-  const vPath=(startY,endY,fn)=>{ const p=[]; for(let y=startY;y>=endY;y-=3) p.push(fn(y)); return p; };
-
-  if (isVert) {
-    // すみ肉: 垂直方向パス
-    const amp = layer==="root"?8:layer==="fill"?14:20;
-    switch(patternId) {
-      case "stringer": return vPath(filletStartY,filletEndY,y=>[CX,y]);
-      case "zigzag": {
-        const S=16;
-        return vPath(filletStartY,filletEndY,y=>{
-          const c=((filletStartY-y)%S)/S;
-          return [CX+(c<0.5?(c*2-0.5):(1.5-c*2))*amp*2, y];
-        });
-      }
-      case "semicircle": {
-        const S=28;
-        return vPath(filletStartY,filletEndY,y=>{
-          const c=((filletStartY-y)%S)/S;
-          return [CX+Math.sin(c*Math.PI)*amp, y];
-        });
-      }
-      case "cshape": {
-        const unit=[[0,0],[amp*0.3,5],[amp*0.6,10],[amp*0.85,15],[amp,19],[amp*0.85,24],[amp*0.6,29],[amp*0.3,33],[0,36]];
-        const p=[]; let oy=filletStartY;
-        while(oy-36>=filletEndY){ unit.forEach(([dx,dy])=>p.push([CX+dx, oy-dy])); oy-=36; }
-        return p;
-      }
-      case "triangle": {
-        const unit=[[0,0],[amp*0.4,6],[amp*0.8,12],[amp,18],[amp*0.8,24],[amp*0.4,30],[0,36]];
-        const p=[]; let oy=filletStartY;
-        while(oy-36>=filletEndY){ unit.forEach(([dx,dy])=>p.push([CX+dx, oy-dy])); oy-=36; }
-        return p;
-      }
-      default: return vPath(filletStartY,filletEndY,y=>[CX,y]);
-    }
-  }
-
-  // 水平パス（flat/groove/buildup）
-  const amp = matType==="groove" ? (layer==="root"?8:layer==="fill"?14:20) : 18;
   switch(patternId) {
     case "stringer": return hPath(CY,(x,cy)=>cy);
     case "zigzag": {
-      const S=18;
-      return hPath(CY,(x,cy)=>{const c=((x-20)%S)/S;return cy+(c<0.5?(c*2-0.5):(1.5-c*2))*amp*2;});
+      const A=22,S=20;
+      return hPath(CY,(x,cy)=>{const c=((x-22)%S)/S;return cy+(c<0.5?(c*2-0.5):(1.5-c*2))*A*2;});
     }
     case "semicircle": {
-      const S=32;
-      return hPath(CY,(x,cy)=>{const c=((x-20)%S)/S;return cy-Math.sin(c*Math.PI)*amp;});
+      const R=18,S=34;
+      return hPath(CY,(x,cy)=>{const c=((x-22)%S)/S;return cy-Math.sin(c*Math.PI)*R;});
     }
     case "cshape": {
-      const unit=[[0,0],[5,-amp*0.32],[10,-amp*0.6],[15,-amp*0.84],[20,-amp],[25,-amp*0.84],[30,-amp*0.6],[35,-amp*0.32],[40,0]];
-      const p=[]; let ox=20; while(ox+40<=300){unit.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=40;} return p;
+      const unit=[[0,0],[5,-8],[10,-15],[15,-20],[20,-23],[25,-20],[30,-15],[35,-8],[40,0]];
+      const p=[]; let ox=22; while(ox+40<=298){unit.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=40;} return p;
     }
-    case "figure8": return hPath(CY,(x,cy)=>{const t=(x-20)/280;const ph=t*(280/50)*Math.PI*2;return cy+Math.sin(ph)*amp*0.85*Math.cos(ph/2);});
-    case "wave": return hPath(CY,(x,cy)=>cy+Math.sin((x-20)/36*Math.PI*2)*amp*0.7);
+    case "figure8": return hPath(CY,(x,cy)=>{const t=(x-22)/276;const ph=t*(276/50)*Math.PI*2;return cy+Math.sin(ph)*19*Math.cos(ph/2);});
+    case "wave": return hPath(CY,(x,cy)=>cy+Math.sin((x-22)/38*Math.PI*2)*15);
     case "triangle": {
-      const unit=[[0,0],[7,-amp*0.4],[14,-amp*0.8],[21,-amp],[28,-amp*0.8],[35,-amp*0.4],[42,0]];
-      const p=[]; let ox=20; while(ox+42<=300){unit.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=42;} return p;
+      const unit=[[0,0],[7,-12],[14,-22],[21,-27],[28,-22],[35,-12],[42,0]];
+      const p=[]; let ox=22; while(ox+42<=298){unit.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=42;} return p;
     }
     case "diamond": {
-      const unit=[[0,0],[8,-amp*0.4],[16,-amp*0.75],[24,-amp],[32,-amp*0.75],[40,-amp*0.4],[48,0],[56,amp*0.4],[64,amp*0.75],[72,amp],[80,amp*0.75],[88,amp*0.4],[96,0]];
-      const p=[]; let ox=20; while(ox+96<=300){unit.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=96;} return p;
+      const unit=[[0,0],[8,-13],[16,-23],[24,-30],[32,-23],[40,-13],[48,0],[56,13],[64,23],[72,30],[80,23],[88,13],[96,0]];
+      const p=[]; let ox=22; while(ox+96<=298){unit.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=96;} return p;
     }
-    case "whip": return hPath(CY,(x,cy)=>{const c=((x-20)%20)/20;return cy+(c<0.3?c/0.3*10:c<0.7?10-(c-0.3)/0.4*20:-10+(c-0.7)/0.3*10);});
+    case "whip": return hPath(CY,(x,cy)=>{const c=((x-22)%20)/20;return cy+(c<0.3?c/0.3*10:c<0.7?10-(c-0.3)/0.4*20:-10+(c-0.7)/0.3*10);});
     default: return hPath(CY,(x,cy)=>cy);
   }
 };
 
-// ============================================================
-// パターン・設定定義
-// ============================================================
 const PATTERNS = [
   {id:"stringer",  name:"ストリンガー", en:"Stringer",  color:"#E85D04", posture:["下向き","横向き","立向き","上向き"], use:["初層","薄板","全姿勢"],  desc:"直線に進む最も基本的な運棒。溶け込みが深く初層や薄板に最適。"},
   {id:"zigzag",    name:"ジグザグ",     en:"Zigzag",    color:"#F59E0B", posture:["下向き","横向き"],               use:["すみ肉","開先充填"],        desc:"一定幅で左右に振る。ビード幅を広げたいときの基本技法。"},
@@ -110,94 +52,98 @@ const PATTERNS = [
   {id:"diamond",   name:"ダイヤ形",     en:"Diamond",   color:"#60A5FA", posture:["下向き"],                        use:["肉盛り","開先充填"],        desc:"菱形を描く。溶け込み深さと充填量のバランスに優れる。"},
   {id:"whip",      name:"ウィップ",     en:"Whip",      color:"#EC4899", posture:["下向き","立向き"],               use:["被覆アーク","薄板"],        desc:"前進しながら素早く上下に振る。被覆アーク溶接の基本技法のひとつ。"},
 ];
+
 const MAT_TYPES=[
   {id:"flat",    name:"平板"},
   {id:"fillet",  name:"すみ肉"},
   {id:"groove",  name:"V開先"},
   {id:"buildup", name:"肉盛り"},
 ];
-const LAYERS=[
-  {id:"root", name:"Root", desc:"初層",   color:"#EF4444"},
-  {id:"fill", name:"Fill", desc:"充填層", color:"#F59E0B"},
-  {id:"cap",  name:"Cap",  desc:"仕上げ", color:"#10B981"},
-];
+
 const POSTURE_COLOR={"下向き":"#E85D04","横向き":"#3B82F6","立向き":"#10B981","上向き":"#8B5CF6"};
 const USE_COLOR={"すみ肉":"#F59E0B","肉盛り":"#EF4444","開先充填":"#06B6D4","初層":"#34D399","薄板":"#A78BFA","全姿勢":"#EC4899","補修":"#FB923C","立向き":"#10B981","上向き溶接":"#8B5CF6","開先":"#06B6D4","外観重視":"#FCD34D","被覆アーク":"#F87171"};
 const SPEEDS=[{label:"遅い",fps:0.25},{label:"普通",fps:0.7},{label:"速い",fps:1.6}];
 
 // ============================================================
-// 母材SVG（正しい断面形状）
+// 母材SVG
 // ============================================================
-function BaseMaterial({matType, layer, layerIdx}) {
+function BaseMaterial({matType}) {
 
   if (matType==="fillet") {
+    // T継手 斜め俯瞰イメージ（写真のようなアングル）
     return (
       <g>
-        {/* 水平板 */}
-        <rect x="10" y="185" width="300" height="28" fill="#374151" rx="1"/>
-        <rect x="10" y="183" width="300" height="4" fill="#4B5563" rx="1"/>
-        {/* 垂直板 */}
-        <rect x="143" y="15" width="24" height="170" fill="#374151" rx="1"/>
-        <rect x="141" y="15" width="4" height="170" fill="#4B5563" rx="1"/>
-        <rect x="165" y="15" width="4" height="170" fill="#4B5563" rx="1"/>
+        {/* 奥行き感のある水平板（台形で遠近感） */}
+        <polygon points="22,175 298,175 310,205 10,205" fill="#374151"/>
+        <polygon points="22,173 298,173 310,175 10,175" fill="#4B5563"/>
+        {/* 水平板 質感 */}
+        <line x1="80"  y1="175" x2="77"  y2="205" stroke="#4B5563" strokeWidth="0.5" opacity="0.3"/>
+        <line x1="140" y1="175" x2="136" y2="205" stroke="#4B5563" strokeWidth="0.5" opacity="0.3"/>
+        <line x1="200" y1="175" x2="195" y2="205" stroke="#4B5563" strokeWidth="0.5" opacity="0.3"/>
+        <line x1="260" y1="175" x2="254" y2="205" stroke="#4B5563" strokeWidth="0.5" opacity="0.3"/>
 
-        {/* 左すみ肉部（三角形の空間） */}
-        <polygon points="143,183 143,155 112,183" fill="#0F172A"/>
-        <line x1="143" y1="183" x2="112" y2="183" stroke="#475569" strokeWidth="0.5"/>
-        <line x1="143" y1="155" x2="112" y2="183" stroke="#475569" strokeWidth="0.5"/>
+        {/* 垂直板（立ち板）斜め俯瞰 */}
+        <polygon points="148,80 172,80 175,175 145,175" fill="#4B5563"/>
+        <polygon points="145,80 148,80 145,175" fill="#374151"/>
+        <polygon points="172,80 178,80 178,175 175,175" fill="#2D3748"/>
+        {/* 垂直板 正面 */}
+        <rect x="148" y="80" width="24" height="95" fill="#374151" rx="1"/>
+        <rect x="146" y="80" width="4" height="95" fill="#4B5563" rx="1"/>
+        <rect x="170" y="80" width="4" height="95" fill="#2D3748" rx="1"/>
 
-        {/* 既存ビード表示 */}
-        {layerIdx>=1 && <ellipse cx="127" cy="177" rx="14" ry="6" fill="#EF4444" opacity="0.55" transform="rotate(-45 127 177)"/>}
-        {layerIdx>=2 && <ellipse cx="122" cy="166" rx="18" ry="7" fill="#F59E0B" opacity="0.5" transform="rotate(-45 122 166)"/>}
+        {/* 溶接部（角部の盛り上がり） */}
+        <ellipse cx="148" cy="174" rx="22" ry="5" fill="#E85D04" opacity="0.25" transform="rotate(-8 148 174)"/>
+        <ellipse cx="148" cy="172" rx="16" ry="4" fill="#E85D04" opacity="0.4" transform="rotate(-8 148 172)"/>
 
-        {/* 進行ガイド */}
-        <line x1="130" y1="15" x2="130" y2="183" stroke="#475569" strokeWidth="1" strokeDasharray="4,4"/>
+        {/* 溶接線ガイド */}
+        <line x1="22" y1="174" x2="298" y2="174" stroke="#475569" strokeWidth="1" strokeDasharray="5,4"/>
 
-        {/* 層ラベル */}
-        <text x="170" y="186" fontSize="8" fill="#EF4444">Root</text>
-        <text x="170" y="170" fontSize="8" fill="#F59E0B">Fill</text>
-        <text x="170" y="154" fontSize="8" fill="#10B981">Cap</text>
-        <text x="15" y="32" fontSize="9" fill="#475569">▲ 進行</text>
-        <text x="15" y="210" fontSize="8" fill="#64748B">断面図 / T継手すみ肉</text>
+        {/* 説明テキスト */}
+        <text x="15" y="215" fontSize="9" fill="#64748B">T継手すみ肉 — 立板と水平板の角部を溶接</text>
+        <text x="175" y="90" fontSize="8" fill="#94A3B8">立板</text>
+        <text x="230" y="185" fontSize="8" fill="#94A3B8">水平板</text>
+        <text x="15" y="170" fontSize="8" fill="#E85D04">← 溶接線</text>
+        <text x="235" y="78" fontSize="9" fill="#475569">→ 進行方向</text>
+        <line x1="230" y1="74" x2="298" y2="74" stroke="#475569" strokeWidth="1.2" strokeLinecap="round"/>
+        <polygon points="298,70 310,74 298,78" fill="#475569"/>
       </g>
     );
   }
 
   if (matType==="groove") {
-    const rootY=192, fillY=174, capY=158;
-    const guideY = layer==="root"?rootY:layer==="fill"?fillY:capY;
+    // V開先 上から見た俯瞰図
     return (
       <g>
-        {/* 左母材（斜めカット） */}
-        <polygon points="10,145 115,145 130,195 10,195" fill="#374151" stroke="#4B5563" strokeWidth="1"/>
-        <rect x="10" y="193" width="300" height="15" fill="#374151"/>
-        {/* 右母材（斜めカット） */}
-        <polygon points="310,145 205,145 190,195 310,195" fill="#374151" stroke="#4B5563" strokeWidth="1"/>
-        {/* 断面の縁取り */}
-        <line x1="10" y1="145" x2="115" y2="145" stroke="#4B5563" strokeWidth="2"/>
-        <line x1="310" y1="145" x2="205" y2="145" stroke="#4B5563" strokeWidth="2"/>
-        <line x1="115" y1="145" x2="130" y2="195" stroke="#5B6B7C" strokeWidth="1.5"/>
-        <line x1="205" y1="145" x2="190" y2="195" stroke="#5B6B7C" strokeWidth="1.5"/>
+        {/* 左母材（上から見た平面） */}
+        <rect x="22" y="100" width="128" height="90" fill="#374151" rx="2"/>
+        <rect x="22" y="98" width="128" height="5" fill="#4B5563" rx="1"/>
+        {/* 左母材の開先面（斜め） */}
+        <polygon points="150,100 165,145 150,190" fill="#2D3748" stroke="#4B5563" strokeWidth="1"/>
 
-        {/* 開先内部（溶接空間） */}
-        <polygon points="115,145 160,145 205,145 190,195 130,195" fill="#0A0F1A"/>
+        {/* 右母材（上から見た平面） */}
+        <rect x="170" y="100" width="128" height="90" fill="#374151" rx="2"/>
+        <rect x="170" y="98" width="128" height="5" fill="#4B5563" rx="1"/>
+        {/* 右母材の開先面（斜め） */}
+        <polygon points="170,100 155,145 170,190" fill="#2D3748" stroke="#4B5563" strokeWidth="1"/>
 
-        {/* ルート部 */}
-        <rect x="127" y="192" width="26" height="5" fill="#4B5563" rx="1"/>
+        {/* 開先部（V字の溝） */}
+        <polygon points="150,100 165,145 155,145 170,100" fill="#0A0F1A" stroke="#334155" strokeWidth="1"/>
+        <polygon points="165,145 150,190 170,190 155,145" fill="#0A0F1A" stroke="#334155" strokeWidth="1"/>
 
-        {/* 既存ビード */}
-        {layerIdx>=1 && <ellipse cx="160" cy="192" rx="16" ry="4" fill="#EF4444" opacity="0.65"/>}
-        {layerIdx>=2 && <ellipse cx="160" cy="175" rx="24" ry="5" fill="#F59E0B" opacity="0.6"/>}
+        {/* ルートギャップ */}
+        <rect x="155" y="143" width="10" height="4" fill="#1E293B" rx="1"/>
 
-        {/* 現在層ガイドライン */}
-        <line x1="20" y1={guideY} x2="300" y2={guideY} stroke={layer==="root"?"#EF4444":layer==="fill"?"#F59E0B":"#10B981"} strokeWidth="1" strokeDasharray="5,4" opacity="0.6"/>
+        {/* 溶接線ガイド（開先中心） */}
+        <line x1="22" y1="145" x2="298" y2="145" stroke="#475569" strokeWidth="1" strokeDasharray="5,4"/>
 
-        {/* 層ラベル */}
-        <text x="270" y={rootY-3} fontSize="8" fill="#EF4444">Root</text>
-        <text x="270" y={fillY-3} fontSize="8" fill="#F59E0B">Fill</text>
-        <text x="274" y={capY-3} fontSize="8" fill="#10B981">Cap</text>
-        <text x="12" y="140" fontSize="8" fill="#64748B">断面図 / V開先</text>
-        <text x="260" y="136" fontSize="9" fill="#475569">→進行</text>
+        {/* 説明テキスト */}
+        <text x="15" y="215" fontSize="9" fill="#64748B">V開先（上面） — トーチが開先溝の中心を進行</text>
+        <text x="30" y="148" fontSize="8" fill="#94A3B8">左母材</text>
+        <text x="215" y="148" fontSize="8" fill="#94A3B8">右母材</text>
+        <text x="144" y="132" fontSize="7" fill="#64748B">開先</text>
+        <text x="235" y="95" fontSize="9" fill="#475569">→ 進行方向</text>
+        <line x1="230" y1="91" x2="298" y2="91" stroke="#475569" strokeWidth="1.2" strokeLinecap="round"/>
+        <polygon points="298,87 310,91 298,95" fill="#475569"/>
       </g>
     );
   }
@@ -205,15 +151,14 @@ function BaseMaterial({matType, layer, layerIdx}) {
   if (matType==="buildup") {
     return (
       <g>
-        <rect x="10" y="170" width="300" height="28" fill="#374151" rx="1"/>
-        <rect x="10" y="168" width="300" height="4" fill="#4B5563" rx="1"/>
-        {/* 既存肉盛り */}
-        <rect x="10" y="156" width="115" height="14" fill="#4B5563" rx="1" opacity="0.65"/>
-        <ellipse cx="125" cy="163" rx="9" ry="7" fill="#4B5563" opacity="0.45"/>
-        <line x1="20" y1="158" x2="300" y2="158" stroke="#475569" strokeWidth="1" strokeDasharray="5,4"/>
-        <text x="12" y="152" fontSize="8" fill="#64748B">← 肉盛り済み</text>
-        <text x="260" y="152" fontSize="9" fill="#475569">→進行</text>
-        <text x="12" y="184" fontSize="8" fill="#64748B">断面図 / 肉盛り補修</text>
+        <rect x="22" y="168" width="276" height="28" fill="#374151" rx="1"/>
+        <rect x="22" y="166" width="276" height="4" fill="#4B5563" rx="1"/>
+        <rect x="22" y="155" width="110" height="13" fill="#4B5563" rx="1" opacity="0.6"/>
+        <ellipse cx="132" cy="161" rx="8" ry="6" fill="#4B5563" opacity="0.4"/>
+        <line x1="22" y1="155" x2="298" y2="155" stroke="#475569" strokeWidth="1" strokeDasharray="5,4"/>
+        <text x="15" y="150" fontSize="8" fill="#64748B">← 肉盛り済み</text>
+        <text x="235" y="150" fontSize="9" fill="#475569">→ 進行</text>
+        <text x="15" y="210" fontSize="9" fill="#64748B">肉盛り補修 — 消耗した母材面を積み上げる</text>
       </g>
     );
   }
@@ -221,13 +166,14 @@ function BaseMaterial({matType, layer, layerIdx}) {
   // flat
   return (
     <g>
-      <rect x="10" y="172" width="300" height="28" fill="#374151" rx="1"/>
-      <rect x="10" y="170" width="300" height="4" fill="#4B5563" rx="1"/>
-      {[50,90,130,170,210,250,290].map(x=>(
-        <line key={x} x1={x} y1="172" x2={x} y2="200" stroke="#4B5563" strokeWidth="0.5" opacity="0.25"/>
+      <rect x="22" y="170" width="276" height="28" fill="#374151" rx="1"/>
+      <rect x="22" y="168" width="276" height="4" fill="#4B5563" rx="1"/>
+      {[60,100,140,180,220,260].map(x=>(
+        <line key={x} x1={x} y1="170" x2={x} y2="198" stroke="#4B5563" strokeWidth="0.5" opacity="0.25"/>
       ))}
-      <line x1="20" y1="170" x2="300" y2="170" stroke="#475569" strokeWidth="1" strokeDasharray="5,4"/>
-      <text x="260" y="165" fontSize="9" fill="#475569">→進行</text>
+      <line x1="22" y1="168" x2="298" y2="168" stroke="#475569" strokeWidth="1" strokeDasharray="5,4"/>
+      <text x="235" y="163" fontSize="9" fill="#475569">→ 進行</text>
+      <text x="15" y="210" fontSize="9" fill="#64748B">平板下向き溶接</text>
     </g>
   );
 }
@@ -266,18 +212,14 @@ export function WeaveScreen() {
   const [progress,setProgress]     = useState(0);
   const [matIdx,setMatIdx]         = useState(0);
   const [postureIdx,setPostureIdx] = useState(0);
-  const [layerIdx,setLayerIdx]     = useState(0);
   const [tick,setTick]             = useState(0);
   const animRef=useRef(null),progRef=useRef(0),lastRef=useRef(null),tickRef=useRef(0);
 
   const pattern=PATTERNS[selected];
   const matType=MAT_TYPES[matIdx].id;
-  const layer=LAYERS[layerIdx].id;
-  const showLayers=matType==="groove"||matType==="fillet";
-  const paths=buildPaths(pattern.id,matType,layer);
-  const activeColor=showLayers?LAYERS[layerIdx].color:pattern.color;
+  const paths=buildPaths(pattern.id,matType);
 
-  useEffect(()=>{progRef.current=0;setProgress(0);lastRef.current=null;},[selected,matIdx,postureIdx,layerIdx]);
+  useEffect(()=>{progRef.current=0;setProgress(0);lastRef.current=null;},[selected,matIdx,postureIdx]);
 
   useEffect(()=>{
     const step=(ts)=>{
@@ -292,11 +234,11 @@ export function WeaveScreen() {
     };
     animRef.current=requestAnimationFrame(step);
     return()=>cancelAnimationFrame(animRef.current);
-  },[running,speed,selected,matIdx,postureIdx,layerIdx,paths.length]);
+  },[running,speed,selected,matIdx,postureIdx,paths.length]);
 
   const idx=Math.min(progress,paths.length-1);
   const trail=paths.slice(Math.max(0,idx-80),idx+1);
-  const cur=paths[idx]||[20,163];
+  const cur=paths[idx]||[22,162];
   const prev=paths[Math.max(0,idx-4)]||cur;
   const angle=Math.atan2(cur[1]-prev[1],cur[0]-prev[0]);
 
@@ -311,6 +253,7 @@ export function WeaveScreen() {
       </div>
 
       <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px",marginBottom:10}}>
+
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
           <div>
             <span style={{fontSize:16,fontWeight:900,color:pattern.color}}>{pattern.name}</span>
@@ -322,6 +265,7 @@ export function WeaveScreen() {
           </button>
         </div>
 
+        {/* 姿勢 */}
         <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:5}}>
           <span style={{fontSize:9,color:"#64748B",lineHeight:"22px",marginRight:2}}>姿勢：</span>
           {pattern.posture.map((p,i)=>(
@@ -333,6 +277,7 @@ export function WeaveScreen() {
           ))}
         </div>
 
+        {/* 用途 */}
         <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:7}}>
           <span style={{fontSize:9,color:"#64748B",lineHeight:"18px",marginRight:2}}>用途：</span>
           {pattern.use.map(u=>(
@@ -342,10 +287,11 @@ export function WeaveScreen() {
           ))}
         </div>
 
-        <div style={{display:"flex",gap:5,marginBottom:showLayers?6:8,alignItems:"center",flexWrap:"wrap"}}>
+        {/* 母材 */}
+        <div style={{display:"flex",gap:5,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
           <span style={{fontSize:10,color:"#64748B"}}>母材：</span>
           {MAT_TYPES.map((m,i)=>(
-            <button key={m.id} onClick={()=>{setMatIdx(i);setLayerIdx(0);}}
+            <button key={m.id} onClick={()=>{setMatIdx(i);}}
               style={{background:matIdx===i?"#1E3A5F":"#0F172A",
                 border:`1px solid ${matIdx===i?"#3B82F6":BORDER}`,
                 borderRadius:6,padding:"3px 8px",
@@ -354,36 +300,23 @@ export function WeaveScreen() {
           ))}
         </div>
 
-        {showLayers&&(
-          <div style={{display:"flex",gap:5,marginBottom:8,alignItems:"center"}}>
-            <span style={{fontSize:10,color:"#64748B"}}>溶接層：</span>
-            {LAYERS.map((l,i)=>(
-              <button key={l.id} onClick={()=>setLayerIdx(i)}
-                style={{background:layerIdx===i?`${l.color}33`:"#0F172A",
-                  border:`1.5px solid ${layerIdx===i?l.color:BORDER}`,
-                  borderRadius:6,padding:"3px 10px",
-                  color:layerIdx===i?l.color:"#64748B",
-                  fontSize:10,fontWeight:700,cursor:"pointer"}}>
-                {l.name}<span style={{fontSize:8,marginLeft:3,opacity:0.7}}>{l.desc}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
+        {/* SVG */}
         <svg width="100%" viewBox="0 0 320 220"
           style={{display:"block",background:"#0A0F1A",borderRadius:10,border:`1px solid ${BORDER}`}}>
           {[55,110,165,220,275].map(x=><line key={`vg${x}`} x1={x} y1="0" x2={x} y2="220" stroke="#111827" strokeWidth="0.5"/>)}
           {[44,88,132,176].map(y=><line key={`hg${y}`} x1="0" y1={y} x2="320" y2={y} stroke="#111827" strokeWidth="0.5"/>)}
-          <BaseMaterial matType={matType} layer={layer} layerIdx={layerIdx}/>
-          {trail.length>1&&<polyline points={trail.map(p=>`${p[0]},${p[1]}`).join(" ")} fill="none" stroke={activeColor} strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.75"/>}
+          <BaseMaterial matType={matType}/>
+          {trail.length>1&&<polyline points={trail.map(p=>`${p[0]},${p[1]}`).join(" ")} fill="none" stroke={pattern.color} strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.75"/>}
           {trail.length>1&&<polyline points={trail.map(p=>`${p[0]},${p[1]}`).join(" ")} fill="none" stroke="#fff" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.12"/>}
-          <WeldTorch x={cur[0]} y={cur[1]} angle={angle} color={activeColor} running={running} tick={tick}/>
+          <WeldTorch x={cur[0]} y={cur[1]} angle={angle} color={pattern.color} running={running} tick={tick}/>
         </svg>
 
+        {/* 説明 */}
         <div style={{marginTop:8,fontSize:11,color:"#94A3B8",lineHeight:1.7,background:"#0A0F1A",borderRadius:8,padding:"8px 10px"}}>
-          {showLayers?`【${LAYERS[layerIdx].name}層 / ${LAYERS[layerIdx].desc}】${pattern.desc}`:pattern.desc}
+          {pattern.desc}
         </div>
 
+        {/* スピード */}
         <div style={{display:"flex",gap:6,marginTop:8,alignItems:"center"}}>
           <span style={{fontSize:10,color:"#64748B"}}>速度：</span>
           {SPEEDS.map((s,i)=>(
