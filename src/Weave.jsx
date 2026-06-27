@@ -43,7 +43,7 @@ const buildGroovePath = (patternId) => {
 
 // すみ肉: 水平 左→右 y=172（角部）
 const buildFilletPath = (patternId) => {
-  const CY = 172;
+  const CY = 176;
   const h=(cy,fn)=>{ const p=[]; for(let x=22;x<=298;x+=3) p.push([x,fn(x,cy)]); return p; };
   switch(patternId) {
     case "stringer":   return h(CY,(x,cy)=>cy);
@@ -123,35 +123,39 @@ function GrooveBackground() {
   );
 }
 
-// すみ肉: 斜め俯瞰、角部を左→右に進む
+// すみ肉: 立板は左寄り、トーチが角部を左→右に通過
 function FilletBackground() {
+  // 立板: x=60〜84, 水平板: y=178
+  // 角部: x=60, y=178 → トーチはx=22から右へ走り角部付近でウィービング
   return (
     <g>
       {/* 水平板 */}
-      <polygon points="22,182 298,182 305,207 15,207" fill="#374151"/>
-      <polygon points="22,180 298,180 305,182 15,180" fill="#4B5563"/>
-      {[70,120,170,220,270].map(x=>(
-        <line key={x} x1={x} y1="182" x2={x+2} y2="207" stroke="#4B5563" strokeWidth="0.5" opacity="0.2"/>
+      <rect x="22" y="178" width="276" height="28" fill="#374151" rx="1"/>
+      <rect x="22" y="176" width="276" height="4" fill="#4B5563" rx="1"/>
+      {[80,120,160,200,240,280].map(x=>(
+        <line key={x} x1={x} y1="178" x2={x} y2="206" stroke="#4B5563" strokeWidth="0.5" opacity="0.2"/>
       ))}
-      {/* 垂直板 */}
-      <rect x="148" y="78" width="24" height="104" fill="#374151" rx="1"/>
-      <rect x="146" y="78" width="4" height="104" fill="#4B5563" rx="1"/>
-      <rect x="170" y="78" width="4" height="104" fill="#2D3748" rx="1"/>
-      <rect x="148" y="76" width="24" height="4" fill="#5B6B7C" rx="1"/>
-      {/* 角部の溶接空間 */}
-      <polygon points="148,180 148,156 116,180" fill="#0A0F1A" stroke="#334155" strokeWidth="1"/>
+      {/* 立板（左寄り） */}
+      <rect x="60" y="78" width="24" height="100" fill="#374151" rx="1"/>
+      <rect x="58" y="78" width="4" height="100" fill="#4B5563" rx="1"/>
+      <rect x="82" y="78" width="4" height="100" fill="#2D3748" rx="1"/>
+      <rect x="60" y="76" width="24" height="4" fill="#5B6B7C" rx="1"/>
+      {/* 角部の溶接空間（左側） */}
+      <polygon points="60,176 60,152 30,176" fill="#0A0F1A" stroke="#334155" strokeWidth="1"/>
+      {/* 右側のすみ肉空間 */}
+      <polygon points="84,176 84,152 114,176" fill="#0A0F1A" stroke="#334155" strokeWidth="1"/>
       {/* 溶接線ガイド */}
-      <line x1="22" y1="180" x2="298" y2="180" stroke="#475569" strokeWidth="1" strokeDasharray="5,4" opacity="0.6"/>
+      <line x1="22" y1="176" x2="298" y2="176" stroke="#475569" strokeWidth="1" strokeDasharray="5,4" opacity="0.6"/>
       {/* ラベル */}
-      <text x="155" y="90" fontSize="8" fill="#94A3B8">立板</text>
-      <text x="215" y="195" fontSize="8" fill="#64748B">水平板</text>
-      <text x="82" y="174" fontSize="8" fill="#94A3B8">溶接部</text>
+      <text x="66" y="90" fontSize="8" fill="#94A3B8">立板</text>
+      <text x="160" y="196" fontSize="8" fill="#64748B">水平板</text>
+      <text x="22" y="168" fontSize="8" fill="#94A3B8">溶接部→</text>
       {/* 進行矢印 */}
-      <line x1="230" y1="70" x2="295" y2="70" stroke="#475569" strokeWidth="1.2"/>
-      <polygon points="295,66 308,70 295,74" fill="#475569"/>
-      <text x="228" y="65" fontSize="9" fill="#475569">→ 進行</text>
+      <line x1="200" y1="68" x2="292" y2="68" stroke="#475569" strokeWidth="1.2"/>
+      <polygon points="292,64 304,68 292,72" fill="#475569"/>
+      <text x="198" y="63" fontSize="9" fill="#475569">→ 進行</text>
       {/* 説明 */}
-      <text x="22" y="216" fontSize="9" fill="#64748B">T継手すみ肉 — 立板と水平板の角部を溶接</text>
+      <text x="22" y="214" fontSize="9" fill="#64748B">T継手すみ肉 — 立板と水平板の角部を溶接</text>
     </g>
   );
 }
