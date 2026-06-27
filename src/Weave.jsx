@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from "react";
 // buildup: 肉盛り 左→右 y=155
 // ============================================================
 const buildPaths = (patternId, matType) => {
-  const CY = matType==="fillet" ? 170 : matType==="groove" ? 155 : matType==="buildup" ? 155 : 162;
+  const CY = matType==="fillet" ? 170 : matType==="groove" ? 145 : matType==="buildup" ? 155 : 162;
 
   const hPath=(cy,fn)=>{ const p=[]; for(let x=22;x<=298;x+=3) p.push([x,fn(x,cy)]); return p; };
 
