@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 
 // ============================================================
-// 通常パス（平板・肉盛り用）
+// パス生成
+// flat/buildup: 水平 左→右
+// groove:       縦方向 上→下（奥から手前）x中心=160
+// fillet:       水平 左→右 y=172（角部）
 // ============================================================
+
 const buildFlatPath = (patternId, CY) => {
   const h=(cy,fn)=>{ const p=[]; for(let x=22;x<=298;x+=3) p.push([x,fn(x,cy)]); return p; };
   switch(patternId) {
@@ -19,37 +23,25 @@ const buildFlatPath = (patternId, CY) => {
   }
 };
 
-// ============================================================
-// V開先専用パス
-// 開先はx=144〜176の範囲（V字の溝）、y=100〜190
-// トーチは溝の中心（x=160）に沿って左→右に進む
-// ただし開先内は上下にウィービング
-// ============================================================
+// V開先: 縦方向（上→下）x中心=160、溝幅に合わせてウィービング
 const buildGroovePath = (patternId) => {
-  // 開先の中心x=160, y=155（溝の中心）
-  // 開先幅: y=100(上)で32px, y=190(底)で12px
-  // トーチは左端(x=22)から右端(x=298)へ進む
-  // y座標は開先の中心ライン y=155 を基準にウィービング
-  const CY = 155;
-  const h=(cy,fn)=>{ const p=[]; for(let x=22;x<=298;x+=3) p.push([x,fn(x,cy)]); return p; };
+  const CX = 160; // 溝の中心x
+  const v=(cx,fn)=>{ const p=[]; for(let y=40;y<=195;y+=3) p.push([fn(y,cx),y]); return p; };
   switch(patternId) {
-    case "stringer":   return h(CY,(x,cy)=>cy);
-    case "zigzag":     { const A=14,S=20; return h(CY,(x,cy)=>{const c=((x-22)%S)/S;return cy+(c<0.5?(c*2-0.5):(1.5-c*2))*A*2;}); }
-    case "semicircle": { const R=12,S=30; return h(CY,(x,cy)=>{const c=((x-22)%S)/S;return cy-Math.sin(c*Math.PI)*R;}); }
-    case "cshape":     { const u=[[0,0],[4,-6],[8,-11],[12,-15],[16,-17],[20,-15],[24,-11],[28,-6],[32,0]]; const p=[]; let ox=22; while(ox+32<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=32;} return p; }
-    case "figure8":    return h(CY,(x,cy)=>{const t=(x-22)/276;const ph=t*(276/50)*Math.PI*2;return cy+Math.sin(ph)*13*Math.cos(ph/2);});
-    case "wave":       return h(CY,(x,cy)=>cy+Math.sin((x-22)/36*Math.PI*2)*10);
-    case "triangle":   { const u=[[0,0],[6,-9],[12,-16],[18,-20],[24,-16],[30,-9],[36,0]]; const p=[]; let ox=22; while(ox+36<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=36;} return p; }
-    case "diamond":    { const u=[[0,0],[7,-10],[14,-18],[21,-22],[28,-18],[35,-10],[42,0],[49,10],[56,18],[63,22],[70,18],[77,10],[84,0]]; const p=[]; let ox=22; while(ox+84<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=84;} return p; }
-    case "whip":       return h(CY,(x,cy)=>{const c=((x-22)%18)/18;return cy+(c<0.3?c/0.3*8:c<0.7?8-(c-0.3)/0.4*16:-8+(c-0.7)/0.3*8);});
-    default:           return h(CY,(x,cy)=>cy);
+    case "stringer":   return v(CX,(y,cx)=>cx);
+    case "zigzag":     { const A=10,S=22; return v(CX,(y,cx)=>{const c=((y-40)%S)/S;return cx+(c<0.5?(c*2-0.5):(1.5-c*2))*A*2;}); }
+    case "semicircle": { const R=9,S=30; return v(CX,(y,cx)=>{const c=((y-40)%S)/S;return cx+Math.sin(c*Math.PI)*R;}); }
+    case "cshape":     { const u=[[0,0],[5,4],[9,8],[12,11],[14,13],[12,16],[9,20],[5,23],[0,26]]; const p=[]; let oy=40; while(oy+26<=195){u.forEach(([dy,dx])=>p.push([CX+dx,oy+dy]));oy+=26;} return p; }
+    case "figure8":    return v(CX,(y,cx)=>{const t=(y-40)/155;const ph=t*(155/40)*Math.PI*2;return cx+Math.sin(ph)*10*Math.cos(ph/2);});
+    case "wave":       return v(CX,(y,cx)=>cx+Math.sin((y-40)/28*Math.PI*2)*8);
+    case "triangle":   { const u=[[0,0],[5,-6],[10,-10],[15,-12],[20,-10],[25,-6],[30,0]]; const p=[]; let oy=40; while(oy+30<=195){u.forEach(([dy,dx])=>p.push([CX+dx,oy+dy]));oy+=30;} return p; }
+    case "diamond":    { const u=[[0,0],[6,-8],[12,-13],[18,-15],[24,-13],[30,-8],[36,0],[42,8],[48,13],[54,15],[60,13],[66,8],[72,0]]; const p=[]; let oy=40; while(oy+72<=195){u.forEach(([dy,dx])=>p.push([CX+dx,oy+dy]));oy+=72;} return p; }
+    case "whip":       return v(CX,(y,cx)=>{const c=((y-40)%18)/18;return cx+(c<0.3?c/0.3*8:c<0.7?8-(c-0.3)/0.4*16:-8+(c-0.7)/0.3*8);});
+    default:           return v(CX,(y,cx)=>cx);
   }
 };
 
-// ============================================================
-// すみ肉専用パス
-// T継手: 角部（x=160, y=175）に沿って左→右に進む
-// ============================================================
+// すみ肉: 水平 左→右 y=172（角部）
 const buildFilletPath = (patternId) => {
   const CY = 172;
   const h=(cy,fn)=>{ const p=[]; for(let x=22;x<=298;x+=3) p.push([x,fn(x,cy)]); return p; };
@@ -57,7 +49,7 @@ const buildFilletPath = (patternId) => {
     case "stringer":   return h(CY,(x,cy)=>cy);
     case "zigzag":     { const A=16,S=20; return h(CY,(x,cy)=>{const c=((x-22)%S)/S;return cy+(c<0.5?(c*2-0.5):(1.5-c*2))*A*2;}); }
     case "semicircle": { const R=14,S=30; return h(CY,(x,cy)=>{const c=((x-22)%S)/S;return cy-Math.sin(c*Math.PI)*R;}); }
-    case "cshape":     { const u=[[0,0],[5,-7],[10,-13],[15,-17],[18,-19],[15,-22],[10,-19],[5,-14],[0,-8]]; const p=[]; let ox=22; while(ox+40<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=36;} return p; }
+    case "cshape":     { const u=[[0,0],[5,-7],[10,-13],[15,-17],[18,-19],[15,-22],[10,-19],[5,-14],[0,-8]]; const p=[]; let ox=22; while(ox+36<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=36;} return p; }
     case "figure8":    return h(CY,(x,cy)=>{const t=(x-22)/276;const ph=t*(276/50)*Math.PI*2;return cy+Math.sin(ph)*15*Math.cos(ph/2);});
     case "wave":       return h(CY,(x,cy)=>cy+Math.sin((x-22)/36*Math.PI*2)*12);
     case "triangle":   { const u=[[0,0],[6,-10],[12,-18],[18,-22],[24,-18],[30,-10],[36,0]]; const p=[]; let ox=22; while(ox+36<=298){u.forEach(([dx,dy])=>p.push([ox+dx,CY+dy]));ox+=36;} return p; }
@@ -97,70 +89,69 @@ const SPEEDS=[{label:"遅い",fps:0.25},{label:"普通",fps:0.7},{label:"速い"
 // 母材SVG
 // ============================================================
 
-// V開先専用背景 - 上から見た図、溝の中をトーチが走る
+// V開先: 縦方向（奥から手前）の俯瞰断面
 function GrooveBackground() {
   return (
     <g>
       {/* 左母材 */}
-      <rect x="22" y="110" width="126" height="80" fill="#374151" rx="2"/>
-      <rect x="22" y="108" width="126" height="5" fill="#4B5563" rx="1"/>
+      <rect x="22" y="30" width="126" height="170" fill="#374151" rx="2"/>
+      <rect x="20" y="30" width="5" height="170" fill="#4B5563" rx="1"/>
       {/* 右母材 */}
-      <rect x="172" y="110" width="126" height="80" fill="#374151" rx="2"/>
-      <rect x="172" y="108" width="126" height="5" fill="#4B5563" rx="1"/>
-      {/* 開先面（斜めカット） */}
-      <polygon points="148,110 160,110 160,190 148,190" fill="#2D3748"/>
-      <polygon points="160,110 172,110 172,190 160,190" fill="#2D3748"/>
-      {/* 開先の溝（V字） */}
-      <polygon points="148,110 172,110 166,190 154,190" fill="#0A0F1A" stroke="#334155" strokeWidth="1"/>
-      {/* ルートギャップ */}
-      <rect x="154" y="187" width="12" height="5" fill="#1E293B" rx="1"/>
-      {/* 溶接線ガイド（溝の中心） */}
-      <line x1="22" y1="155" x2="298" y2="155" stroke="#475569" strokeWidth="1" strokeDasharray="5,4" opacity="0.6"/>
+      <rect x="172" y="30" width="126" height="170" fill="#374151" rx="2"/>
+      <rect x="295" y="30" width="5" height="170" fill="#4B5563" rx="1"/>
+      {/* 開先面（斜めV字） */}
+      <polygon points="148,30 172,30 166,200 154,200" fill="#0A0F1A" stroke="#5B6B7C" strokeWidth="1.5"/>
+      {/* 左開先面 */}
+      <polygon points="148,30 154,200 148,200" fill="#2D3748"/>
+      {/* 右開先面 */}
+      <polygon points="172,30 166,200 172,200" fill="#2D3748"/>
+      {/* ルート */}
+      <rect x="154" y="197" width="12" height="5" fill="#4B5563" rx="1"/>
+      {/* 溝中心ガイド */}
+      <line x1="160" y1="30" x2="160" y2="200" stroke="#475569" strokeWidth="1" strokeDasharray="4,4" opacity="0.5"/>
       {/* ラベル */}
-      <text x="30" y="155" fontSize="8" fill="#64748B">左母材</text>
-      <text x="210" y="155" fontSize="8" fill="#64748B">右母材</text>
-      <text x="148" y="102" fontSize="8" fill="#94A3B8">開先</text>
-      {/* 進行矢印 */}
-      <text x="228" y="100" fontSize="9" fill="#475569">→ 進行方向</text>
-      <line x1="225" y1="96" x2="295" y2="96" stroke="#475569" strokeWidth="1.2"/>
-      <polygon points="295,92 305,96 295,100" fill="#475569"/>
+      <text x="50" y="120" fontSize="9" fill="#64748B">左母材</text>
+      <text x="200" y="120" fontSize="9" fill="#64748B">右母材</text>
+      <text x="135" y="22" fontSize="8" fill="#94A3B8">← 開先 →</text>
+      {/* 進行矢印（上→下） */}
+      <line x1="295" y1="40" x2="295" y2="185" stroke="#475569" strokeWidth="1.2"/>
+      <polygon points="291,185 295,198 299,185" fill="#475569"/>
+      <text x="280" y="25" fontSize="9" fill="#475569">進行</text>
       {/* 説明 */}
-      <text x="22" y="208" fontSize="9" fill="#64748B">V開先（上面） — トーチが開先溝の中を進行</text>
+      <text x="22" y="213" fontSize="9" fill="#64748B">V開先（上面） — 開先溝の中をトーチが進む</text>
     </g>
   );
 }
 
-// すみ肉専用背景 - 斜め俯瞰、角部をトーチが走る
+// すみ肉: 斜め俯瞰、角部を左→右に進む
 function FilletBackground() {
   return (
     <g>
-      {/* 水平板（遠近感） */}
-      <polygon points="22,180 298,180 305,205 15,205" fill="#374151"/>
-      <polygon points="22,178 298,178 305,180 15,180" fill="#4B5563"/>
-      {/* 質感ライン */}
+      {/* 水平板 */}
+      <polygon points="22,182 298,182 305,207 15,207" fill="#374151"/>
+      <polygon points="22,180 298,180 305,182 15,180" fill="#4B5563"/>
       {[70,120,170,220,270].map(x=>(
-        <line key={x} x1={x} y1="180" x2={x+2} y2="205" stroke="#4B5563" strokeWidth="0.5" opacity="0.25"/>
+        <line key={x} x1={x} y1="182" x2={x+2} y2="207" stroke="#4B5563" strokeWidth="0.5" opacity="0.2"/>
       ))}
-      {/* 垂直板（立ち板） */}
-      <rect x="148" y="80" width="24" height="100" fill="#374151" rx="1"/>
-      <rect x="146" y="80" width="4" height="100" fill="#4B5563" rx="1"/>
-      <rect x="170" y="80" width="4" height="100" fill="#2D3748" rx="1"/>
-      {/* 垂直板の上面 */}
-      <rect x="148" y="78" width="24" height="4" fill="#5B6B7C" rx="1"/>
-      {/* 角部の溶接空間（三角形） */}
-      <polygon points="148,178 148,155 118,178" fill="#0A0F1A" stroke="#334155" strokeWidth="1"/>
-      {/* 溶接線ガイド（角部） */}
-      <line x1="22" y1="178" x2="298" y2="178" stroke="#475569" strokeWidth="1" strokeDasharray="5,4" opacity="0.6"/>
+      {/* 垂直板 */}
+      <rect x="148" y="78" width="24" height="104" fill="#374151" rx="1"/>
+      <rect x="146" y="78" width="4" height="104" fill="#4B5563" rx="1"/>
+      <rect x="170" y="78" width="4" height="104" fill="#2D3748" rx="1"/>
+      <rect x="148" y="76" width="24" height="4" fill="#5B6B7C" rx="1"/>
+      {/* 角部の溶接空間 */}
+      <polygon points="148,180 148,156 116,180" fill="#0A0F1A" stroke="#334155" strokeWidth="1"/>
+      {/* 溶接線ガイド */}
+      <line x1="22" y1="180" x2="298" y2="180" stroke="#475569" strokeWidth="1" strokeDasharray="5,4" opacity="0.6"/>
       {/* ラベル */}
       <text x="155" y="90" fontSize="8" fill="#94A3B8">立板</text>
-      <text x="210" y="192" fontSize="8" fill="#64748B">水平板</text>
-      <text x="88" y="172" fontSize="8" fill="#94A3B8">溶接部</text>
+      <text x="215" y="195" fontSize="8" fill="#64748B">水平板</text>
+      <text x="82" y="174" fontSize="8" fill="#94A3B8">溶接部</text>
       {/* 進行矢印 */}
-      <text x="228" y="72" fontSize="9" fill="#475569">→ 進行方向</text>
-      <line x1="225" y1="68" x2="295" y2="68" stroke="#475569" strokeWidth="1.2"/>
-      <polygon points="295,64 305,68 295,72" fill="#475569"/>
+      <line x1="230" y1="70" x2="295" y2="70" stroke="#475569" strokeWidth="1.2"/>
+      <polygon points="295,66 308,70 295,74" fill="#475569"/>
+      <text x="228" y="65" fontSize="9" fill="#475569">→ 進行</text>
       {/* 説明 */}
-      <text x="22" y="214" fontSize="9" fill="#64748B">T継手すみ肉 — 立板と水平板の角部を溶接</text>
+      <text x="22" y="216" fontSize="9" fill="#64748B">T継手すみ肉 — 立板と水平板の角部を溶接</text>
     </g>
   );
 }
@@ -168,13 +159,13 @@ function FilletBackground() {
 function FlatBackground() {
   return (
     <g>
-      <rect x="22" y="170" width="276" height="28" fill="#374151" rx="1"/>
-      <rect x="22" y="168" width="276" height="4" fill="#4B5563" rx="1"/>
+      <rect x="22" y="172" width="276" height="28" fill="#374151" rx="1"/>
+      <rect x="22" y="170" width="276" height="4" fill="#4B5563" rx="1"/>
       {[60,100,140,180,220,260].map(x=>(
-        <line key={x} x1={x} y1="170" x2={x} y2="198" stroke="#4B5563" strokeWidth="0.5" opacity="0.2"/>
+        <line key={x} x1={x} y1="172" x2={x} y2="200" stroke="#4B5563" strokeWidth="0.5" opacity="0.2"/>
       ))}
-      <line x1="22" y1="168" x2="298" y2="168" stroke="#475569" strokeWidth="1" strokeDasharray="5,4"/>
-      <text x="235" y="163" fontSize="9" fill="#475569">→ 進行</text>
+      <line x1="22" y1="170" x2="298" y2="170" stroke="#475569" strokeWidth="1" strokeDasharray="5,4"/>
+      <text x="235" y="165" fontSize="9" fill="#475569">→ 進行</text>
       <text x="22" y="210" fontSize="9" fill="#64748B">平板下向き溶接</text>
     </g>
   );
@@ -190,7 +181,7 @@ function BuildupBackground() {
       <line x1="22" y1="155" x2="298" y2="155" stroke="#475569" strokeWidth="1" strokeDasharray="5,4"/>
       <text x="235" y="150" fontSize="9" fill="#475569">→ 進行</text>
       <text x="22" y="150" fontSize="8" fill="#64748B">← 肉盛り済み</text>
-      <text x="22" y="210" fontSize="9" fill="#64748B">肉盛り補修 — 消耗した母材面を積み上げる</text>
+      <text x="22" y="210" fontSize="9" fill="#64748B">肉盛り補修</text>
     </g>
   );
 }
@@ -235,11 +226,10 @@ export function WeaveScreen() {
   const pattern=PATTERNS[selected];
   const matType=MAT_TYPES[matIdx].id;
 
-  // 母材ごとに完全に別のパス生成
-  const paths = matType==="groove"   ? buildGroovePath(pattern.id)
-              : matType==="fillet"   ? buildFilletPath(pattern.id)
-              : matType==="buildup"  ? buildFlatPath(pattern.id, 155)
-              :                        buildFlatPath(pattern.id, 162);
+  const paths = matType==="groove"  ? buildGroovePath(pattern.id)
+              : matType==="fillet"  ? buildFilletPath(pattern.id)
+              : matType==="buildup" ? buildFlatPath(pattern.id, 155)
+              :                       buildFlatPath(pattern.id, 162);
 
   useEffect(()=>{progRef.current=0;setProgress(0);lastRef.current=null;},[selected,matIdx,postureIdx]);
 
@@ -322,18 +312,12 @@ export function WeaveScreen() {
           style={{display:"block",background:"#0A0F1A",borderRadius:10,border:`1px solid ${BORDER}`}}>
           {[55,110,165,220,275].map(x=><line key={`vg${x}`} x1={x} y1="0" x2={x} y2="220" stroke="#111827" strokeWidth="0.5"/>)}
           {[44,88,132,176].map(y=><line key={`hg${y}`} x1="0" y1={y} x2="320" y2={y} stroke="#111827" strokeWidth="0.5"/>)}
-
-          {/* 母材ごとに完全に別の背景 */}
           {matType==="groove"  && <GrooveBackground/>}
           {matType==="fillet"  && <FilletBackground/>}
           {matType==="flat"    && <FlatBackground/>}
           {matType==="buildup" && <BuildupBackground/>}
-
-          {/* ビード跡 */}
           {trail.length>1&&<polyline points={trail.map(p=>`${p[0]},${p[1]}`).join(" ")} fill="none" stroke={pattern.color} strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.75"/>}
           {trail.length>1&&<polyline points={trail.map(p=>`${p[0]},${p[1]}`).join(" ")} fill="none" stroke="#fff" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.12"/>}
-
-          {/* トーチ */}
           <WeldTorch x={cur[0]} y={cur[1]} angle={angle} color={pattern.color} running={running} tick={tick}/>
         </svg>
 
