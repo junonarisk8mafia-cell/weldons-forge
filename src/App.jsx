@@ -55,6 +55,7 @@ import { CalcScreen } from "./Calc";               // 溶接計算ツール
 import { WeaveScreen } from "./Weave";             // ウィービングデモ
 import { recordAnswer } from "./stats";            // 学習記録(localStorage)
 import { StatsScreen } from "./Stats";             // 弱点分析タブ
+import { MockScreen } from "./Mock";               // 模擬試験タブ
 
 // ============================================================
 // STAGE 2 分岐設定（問題はquestions.jsから取得）
@@ -978,7 +979,7 @@ export default function App(){
 
       {/* タブ */}
       <div style={{display:"flex",width:"100%",maxWidth:400,background:"white",borderBottom:"2px solid #E2E8F0"}}>
-        {[{id:"quiz",l:"🎮 クイズ"},{id:"stats",l:"📊 弱点"},{id:"tree",l:"🗺️ ツリー"},{id:"cost",l:"💰 コスト"},{id:"symbol",l:"📐 記号"},{id:"calc",l:"🔢 計算"},{id:"weave",l:"🔥 運棒"}].map(t=>(
+        {[{id:"quiz",l:"🎮 クイズ"},{id:"mock",l:"📝 模試"},{id:"stats",l:"📊 弱点"},{id:"tree",l:"🗺️ ツリー"},{id:"cost",l:"💰 コスト"},{id:"symbol",l:"📐 記号"},{id:"calc",l:"🔢 計算"},{id:"weave",l:"🔥 運棒"}].map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"11px 0",border:"none",borderBottom:`3px solid ${tab===t.id?"#E85D04":"transparent"}`,background:"white",color:tab===t.id?"#1E293B":"#94A3B8",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:F,transition:"all .2s"}}>{t.l}</button>
         ))}
       </div>
@@ -1134,6 +1135,7 @@ export default function App(){
         {tab==="calc"&&<CalcScreen/>}
         {tab==="weave"&&<WeaveScreen/>}
         {tab==="stats"&&<StatsScreen onReview={startReviewBattle}/>}
+        {tab==="mock"&&<MockScreen/>}
 
       </div>
     </div>
