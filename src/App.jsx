@@ -53,6 +53,8 @@ import { TreeScreen, CostScreen } from "./Tree";  // ツリー+コスト
 import { SymbolScreen } from "./Symbol";           // 溶接記号+図面の見方
 import { CalcScreen } from "./Calc";               // 溶接計算ツール
 import { WeaveScreen } from "./Weave";             // ウィービングデモ
+import { recordAnswer } from "./stats";            // 学習記録(localStorage)
+import { StatsScreen } from "./Stats";             // 弱点分析タブ
 
 // ============================================================
 // STAGE 2 分岐設定（問題はquestions.jsから取得）
@@ -755,6 +757,21 @@ export default function App(){
     SFX.start(); setSc("battle");
   }
 
+  // ── 弱点復習バトル(間違えた問題プールから出題) ──
+  function startReviewBattle(pool){
+    if(!pool||pool.length===0){ alert("復習できる問題がまだありません。まずクイズに挑戦しよう！"); return; }
+    const rq = [...pool].sort(()=>Math.random()-0.5).slice(0,20);
+    setSelSt({label:"📊 弱点復習",color:"#E85D04",qStageId:-1,enemy:"苦手ポイント",badge:"苦手克服"});
+    setQs(rq); setQi(0); setSel(null); setAns([]);
+    setEarned(0); setScore(0); setMood("smile");
+    setEHP(100); setPHP(100);
+    setShowOpts(true); setShowMsg(false);
+    setGameOver(false); setVictory(false);
+    setExploding(false); setFlash(null);
+    setWrongAns([]);
+    SFX.start(); setSc("battle");
+  }
+
   // ── 回答処理 ──
   function doAnswer(idx){
     if(sel!==null||gameOver||victory) return;
@@ -807,6 +824,7 @@ export default function App(){
       setMsg("❌ 不正解！ 敵の攻撃を受けた！\n正解："+q.opts[q.a]+"\n\n"+q.exp);
     }
     setAns(p=>[...p,{ok,exp:q.exp,cat:q.cat,xp:q.xp}]);
+    recordAnswer({id:q.id,cat:q.cat,ok});
     setTimeout(()=>{ setBounce(false); },500);
     setTimeout(()=>{ setShowMsg(true); setMsgDone(false); setTimeout(()=>setMsgDone(true),1000); },800);
   }
@@ -960,7 +978,7 @@ export default function App(){
 
       {/* タブ */}
       <div style={{display:"flex",width:"100%",maxWidth:400,background:"white",borderBottom:"2px solid #E2E8F0"}}>
-        {[{id:"quiz",l:"🎮 クイズ"},{id:"tree",l:"🗺️ ツリー"},{id:"cost",l:"💰 コスト"},{id:"symbol",l:"📐 記号"},{id:"calc",l:"🔢 計算"},{id:"weave",l:"🔥 運棒"}].map(t=>(
+        {[{id:"quiz",l:"🎮 クイズ"},{id:"stats",l:"📊 弱点"},{id:"tree",l:"🗺️ ツリー"},{id:"cost",l:"💰 コスト"},{id:"symbol",l:"📐 記号"},{id:"calc",l:"🔢 計算"},{id:"weave",l:"🔥 運棒"}].map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"11px 0",border:"none",borderBottom:`3px solid ${tab===t.id?"#E85D04":"transparent"}`,background:"white",color:tab===t.id?"#1E293B":"#94A3B8",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:F,transition:"all .2s"}}>{t.l}</button>
         ))}
       </div>
@@ -1115,6 +1133,7 @@ export default function App(){
         {/* ── 計算タブ ── */}
         {tab==="calc"&&<CalcScreen/>}
         {tab==="weave"&&<WeaveScreen/>}
+        {tab==="stats"&&<StatsScreen onReview={startReviewBattle}/>}
 
       </div>
     </div>
@@ -1250,7 +1269,7 @@ export default function App(){
         {/* STAGE2分岐の合否 */}
         {STAGE2_BRANCHES.some(b=>b.id===selSt?.id)&&(
           <div style={{marginTop:8,padding:"7px 12px",background:score>=MAX_Q*0.6?"rgba(22,163,74,0.15)":"rgba(220,38,38,0.15)",border:"1px solid "+(score>=MAX_Q*0.6?"#16A34A":"#DC2626"),borderRadius:8,fontSize:11,color:score>=MAX_Q*0.6?"#4ADE80":"#F87171",position:"relative",zIndex:2}}>
-            {score>=MAX_Q*0.6 ? "🎉 合格！ "+selSt.badge+" → STAGE 3解放！" : "不合格（"+score+"/"+MAX_Q+"）60%以上で合格 → 再挑戦！"}
+            {selSt?.qStageId===-1 ? "📊 弱点克服バトル完了！ "+score+"/"+MAX_Q+" 正解" : (score>=MAX_Q*0.6 ? "🎉 合格！ "+selSt.badge+" → STAGE 3解放！" : "不合格（"+score+"/"+MAX_Q+"）60%以上で合格 → 再挑戦！")}
           </div>
         )}
 
