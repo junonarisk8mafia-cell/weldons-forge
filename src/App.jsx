@@ -989,6 +989,29 @@ export default function App(){
         {/* ── クイズタブ ── */}
         {tab==="quiz"&&(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {/* ── 学習の道しるべ（初見ガイド・各タブへジャンプ） ── */}
+            <div style={{background:"linear-gradient(160deg,#0F172A,#1E293B)",borderRadius:10,padding:"11px 12px",marginBottom:2}}>
+              <div style={{color:"#F8FAFC",fontSize:11,fontWeight:700}}>🧭 はじめての方へ — 学習の道しるべ</div>
+              <div style={{color:"#94A3B8",fontSize:9,lineHeight:1.5,margin:"3px 0 8px"}}>どこから手を付ける？ タップでそのタブへ。</div>
+              {[
+                {t:"tree", n:"1", ic:"🗺️", l:"ツリーで全体像", d:"昇段ラダーで“今どこ→次どこ”を掴む"},
+                {t:"quiz", n:"2", ic:"🎮", l:"クイズで知識", d:"RPG形式で基礎〜専門を身につける"},
+                {t:"calc", n:"3", ic:"🔢", l:"計算ドリル", d:"入熱・Ceq・のど厚を反復特訓"},
+                {t:"mock", n:"4", ic:"📝", l:"模試＆記述・口述", d:"本番形式＋WES管理2級/1級対策"},
+                {t:"stats",n:"5", ic:"📊", l:"弱点で復習", d:"間違えた問題だけ再挑戦"},
+              ].map((s,i)=>(
+                <button key={i} onClick={()=>setTab(s.t)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.04)",border:"1px solid #334155",borderRadius:8,padding:"7px 9px",marginBottom:5,cursor:"pointer",fontFamily:F,textAlign:"left"}}>
+                  <span style={{width:18,height:18,borderRadius:"50%",background:"#E85D04",color:"white",fontSize:9,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{s.n}</span>
+                  <span style={{fontSize:13,flexShrink:0}}>{s.ic}</span>
+                  <span style={{flex:1}}>
+                    <span style={{display:"block",color:"#F1F5F9",fontSize:10,fontWeight:700}}>{s.l}</span>
+                    <span style={{display:"block",color:"#94A3B8",fontSize:9,marginTop:1}}>{s.d}</span>
+                  </span>
+                  <span style={{color:"#64748B",fontSize:11,flexShrink:0}}>›</span>
+                </button>
+              ))}
+            </div>
+
             {/* ── ゲームの進め方 ── */}
             <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:10,padding:"10px 12px",marginBottom:2}}>
               <div style={{color:"#C2410C",fontSize:11,fontWeight:700,marginBottom:5}}>🎮 ゲームの進め方</div>
