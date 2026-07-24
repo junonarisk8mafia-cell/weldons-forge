@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from "react";
 import { QUIZ_STAGES } from "./questions";
 import { recordAnswer } from "./stats";
+import { EssayScreen } from "./Essay";
 
 const F = "'Courier New',monospace";
 const PASS = 0.6; // 合格ライン60%
@@ -21,6 +22,7 @@ function fmt(sec) {
 }
 
 export function MockScreen() {
+  const [mode, setMode] = useState("mcq"); // mcq(択一模試) | essay(記述対策)
   const [phase, setPhase] = useState("setup"); // setup | exam | result
   const [qs, setQs] = useState([]);
   const [ans, setAns] = useState([]);   // 各問の選択index(null=未回答)
@@ -78,6 +80,14 @@ export function MockScreen() {
   if (phase === "setup") {
     return (
       <div style={{ width: "100%", maxWidth: 400, padding: "14px 12px 90px", fontFamily: F }}>
+        {/* モード切替: 択一模試 / 記述対策 */}
+        <div style={{ display: "flex", gap: 6, background: "#F1F5F9", borderRadius: 10, padding: 4, marginBottom: 14 }}>
+          <button onClick={() => setMode("mcq")} style={modeBtn(mode === "mcq")}>📝 択一模試</button>
+          <button onClick={() => setMode("essay")} style={modeBtn(mode === "essay")}>📖 記述対策</button>
+        </div>
+
+        {mode === "essay" ? <EssayScreen /> : (
+        <>
         <div style={{ color: "#1E293B", fontSize: 15, fontWeight: 700, marginBottom: 4 }}>📝 模擬試験</div>
         <div style={{ color: "#94A3B8", fontSize: 10, lineHeight: 1.7, marginBottom: 16 }}>
           本番形式(制限時間つき・解説は採点後)。全分野からランダム出題。合格ライン{Math.round(PASS * 100)}%。
@@ -92,6 +102,8 @@ export function MockScreen() {
           ・時間切れで自動採点されます<br />
           ・回答結果は「📊 弱点」分析にも反映されます
         </div>
+        </>
+        )}
       </div>
     );
   }
@@ -228,6 +240,16 @@ function navBtn(disabled, primary) {
     background: disabled ? "#F1F5F9" : primary ? "#E85D04" : "white",
     color: disabled ? "#CBD5E1" : primary ? "white" : "#334155",
     fontSize: 12, fontWeight: 700, cursor: disabled ? "default" : "pointer", fontFamily: F,
+  };
+}
+
+function modeBtn(active) {
+  return {
+    flex: 1, padding: "9px", borderRadius: 8, border: "none",
+    background: active ? "white" : "transparent",
+    color: active ? "#1E293B" : "#94A3B8",
+    fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: F,
+    boxShadow: active ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
   };
 }
 
