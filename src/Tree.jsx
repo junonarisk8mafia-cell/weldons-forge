@@ -109,6 +109,29 @@ const COST_GROUPS = [
   ]},
 ];
 
+// ── 昇段ラダー（WELDON JPの主役：日本の溶接屋が上を目指す一本道）──
+// rung=段位, form=試験形式, study=対応クイズ/ドリル, next=次の一手の指針
+const LADDER = [
+  {rung:"01", tier:"技能", color:"#78716C", icon:"⚡",
+   name:"JIS溶接技能者 基本級", form:"実技（下向 SA-2F 等）", who:"溶接工の名刺代わり。まずここ。",
+   study:"🎮 クイズ STAGE 1〜2（基礎・材料）", next:"下向が安定したら専門級（全姿勢）へ。"},
+  {rung:"02", tier:"技能", color:"#57534E", icon:"🔩",
+   name:"JIS溶接技能者 専門級", form:"実技（立向・横向・上向・管 N-2P 等）", who:"全姿勢・パイプ。単価が上がる分岐点。",
+   study:"🎮 STAGE 3〜4 ＋ 🔥 運棒シミュ", next:"鉄骨ならAW、圧力容器ならボイラー、と専門を選ぶ。"},
+  {rung:"03", tier:"専門", color:"#1D4ED8", icon:"🔀",
+   name:"専門ルート（AW／ボイラー／水中）", form:"学科＋実技（AWは年1回）", who:"専門性で差別化。ゼネコン・プラント案件へ。",
+   study:"🎮 STAGE 2A/2B/2C ＋ STAGE 6（実技・現代技術）", next:"現場を回せるようになったら管理側（WES）へ。"},
+  {rung:"04", tier:"管理", color:"#D97706", icon:"👑",
+   name:"溶接管理技術者 2級（WES 8103）", form:"学科（マーク＋記述）", who:"監督・品質管理。工場認定・官公庁工事に必須。",
+   study:"📊 弱点分析で冶金を潰す ＋ 🧮 計算ドリル（入熱・Ceq）", next:"実務を積み、記述式の1級へ。"},
+  {rung:"05", tier:"管理", color:"#B45309", icon:"📐",
+   name:"溶接管理技術者 1級（WES 8103）", form:"記述式", who:"専門技術分野を担当。橋梁・造船・プラント全対応。",
+   study:"🧮 計算ドリル全種 ＋ STAGE 5〜6 を反復", next:"設計・統括を目指すなら特別級／国際資格へ。"},
+  {rung:"06", tier:"最高峰", color:"#7C3AED", icon:"🌍",
+   name:"特別級 ／ IWE・IIW 国際資格", form:"小論文＋口述 ／ 国際規格試験", who:"溶接全般を統括。世界の案件に通用する頂点。",
+   study:"全ステージ＋模試で総仕上げ", next:"—（頂点）"},
+];
+
 const ROADMAP = [
   {label:"最低限（現場に立つだけ）", cost:"〜5万円",  color:"#0F766E", period:"1〜2週間", merit:"現場入場が可能になる"},
   {label:"即戦力（サポート資格込み）",cost:"〜20万円", color:"#D97706", period:"1〜3ヶ月", merit:"どんな現場にも対応できる"},
@@ -116,6 +139,59 @@ const ROADMAP = [
   {label:"管理職（WES管理技術者）",  cost:"〜80万円", color:"#D97706", period:"3〜5年",   merit:"設計・監督・会社認定に必須"},
   {label:"国際資格（AWS/IIW）",      cost:"〜200万円+",color:"#7C3AED",period:"5〜10年",  merit:"世界中の案件に参加できる"},
 ];
+
+// ============================================================
+// 昇段ラダー（主役）— 日本の溶接屋が上を目指す一本道
+// ============================================================
+function ClimbLadder(){
+  const [open, setOpen] = useState(null);
+  return(
+    <div style={{background:"linear-gradient(160deg,#0F172A,#1E293B)",borderRadius:12,padding:"14px 12px 10px",marginBottom:10,boxShadow:"0 3px 12px rgba(0,0,0,0.18)"}}>
+      <div style={{color:"#F8FAFC",fontSize:13,fontWeight:700,letterSpacing:1}}>🏆 昇段ラダー</div>
+      <div style={{color:"#94A3B8",fontSize:9,lineHeight:1.6,margin:"3px 0 12px"}}>
+        JIS基本 → 専門 → AW/専門 → WES管理 → 国際。日本で上を目指すための一本道。段を押すと試験形式と「次の一手」が出る。
+      </div>
+      <div style={{display:"flex",flexDirection:"column"}}>
+        {LADDER.slice().reverse().map((r,idx,arr)=>{
+          const isO = open===r.rung;
+          return(
+            <div key={r.rung} style={{display:"flex",gap:9}}>
+              {/* 縦ライン＋ノード */}
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:26}}>
+                <div style={{width:26,height:26,borderRadius:"50%",background:r.color,color:"white",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0,boxShadow:`0 0 0 3px ${r.color}33`}}>{r.icon}</div>
+                {idx<arr.length-1&&<div style={{width:2,flex:1,minHeight:14,background:"#334155"}}/>}
+              </div>
+              {/* カード */}
+              <div onClick={()=>setOpen(isO?null:r.rung)} style={{flex:1,marginBottom:8,background:isO?"#1E293B":"rgba(255,255,255,0.04)",border:`1px solid ${isO?r.color:"#334155"}`,borderRadius:9,padding:"8px 10px",cursor:"pointer",transition:"all .2s"}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{color:r.color,fontSize:8,fontWeight:900,background:`${r.color}22`,border:`1px solid ${r.color}55`,borderRadius:4,padding:"1px 5px"}}>{r.tier}</span>
+                  <span style={{color:"#F1F5F9",fontSize:11,fontWeight:700,flex:1}}>{r.name}</span>
+                  <span style={{color:"#64748B",fontSize:9}}>{isO?"▲":"▼"}</span>
+                </div>
+                <div style={{color:"#94A3B8",fontSize:9,marginTop:3,lineHeight:1.5}}>{r.who}</div>
+                {isO&&(
+                  <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:6}}>
+                    <LadderRow c="#38BDF8" k="📝 試験形式" v={r.form}/>
+                    <LadderRow c="#34D399" k="📚 対応する勉強" v={r.study}/>
+                    <LadderRow c="#FBBF24" k="➡️ 次の一手" v={r.next}/>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+function LadderRow({c,k,v}){
+  return(
+    <div style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${c}33`,borderRadius:6,padding:"6px 8px"}}>
+      <div style={{color:c,fontSize:8,fontWeight:700,marginBottom:2}}>{k}</div>
+      <div style={{color:"#E2E8F0",fontSize:10,lineHeight:1.5}}>{v}</div>
+    </div>
+  );
+}
 
 // ============================================================
 // ツリー画面コンポーネント
@@ -126,6 +202,9 @@ export function TreeScreen(){
 
   return(
     <div style={{display:"flex",flexDirection:"column",gap:6,padding:"4px 0"}}>
+      <ClimbLadder/>
+
+      <div style={{color:"#64748B",fontSize:10,fontWeight:700,padding:"2px 2px 0"}}>🗂️ 全資格の詳細（現場資格〜国際）</div>
       <div style={{background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:10,padding:"10px 14px",marginBottom:4}}>
         <div style={{color:"#166534",fontSize:10,fontWeight:700}}>💡 キャリアロードマップ</div>
         <div style={{color:"#166534",fontSize:9,lineHeight:1.6,marginTop:2}}>
