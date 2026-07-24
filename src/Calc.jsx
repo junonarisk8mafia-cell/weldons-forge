@@ -3,6 +3,7 @@
 // 入熱・炭素当量・予熱温度
 // ============================================================
 import { useState } from "react";
+import { CalcDrill } from "./CalcDrill";
 
 const F = "'Courier New',monospace";
 
@@ -437,6 +438,7 @@ export function CalcScreen(){
     {id:"ceq",    l:"⚗️ Ceq"},
     {id:"preheat",l:"🔥 予熱"},
     {id:"throat", l:"📐 のど厚"},
+    {id:"drill",  l:"🧮 ドリル"},
   ];
 
   return(
@@ -465,6 +467,7 @@ export function CalcScreen(){
       {tab==="ceq"    &&<CeqCalc/>}
       {tab==="preheat"&&<PreheatCalc/>}
       {tab==="throat" &&<ThroatCalc/>}
+      {tab==="drill"  &&<CalcDrill/>}
 
       <div style={{height:20}}/>
     </div>
