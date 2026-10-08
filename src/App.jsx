@@ -58,6 +58,9 @@ const WeaveScreen  = lazy(()=>import("./Weave").then(m=>({default:m.WeaveScreen}
 const MockScreen   = lazy(()=>import("./Mock").then(m=>({default:m.MockScreen})));   // 模擬試験タブ
 import { recordAnswer } from "./stats";            // 学習記録(localStorage)
 import { drawQuestions } from "./shuffle";         // 問題・選択肢シャッフル
+import { StudyPanel } from "./StudyPanel";          // 試験日カウントダウン・今日の復習・リマインダー
+import { ReviewDrill } from "./ReviewDrill";        // 今日の復習(間隔反復)
+import { initReminders } from "./reminder";        // 毎日のリマインダー(アプリのみ)
 import { StatsScreen } from "./Stats.jsx";             // 弱点分析タブ
 
 // ============================================================
@@ -753,6 +756,8 @@ export default function App(){
   const [exploding,setExploding]= useState(false);
   const [wrongAns, setWrongAns] = useState([]);    // 間違えた問題リスト
 
+  useEffect(()=>{ initReminders(); },[]);
+
   useEffect(()=>{
     try { localStorage.setItem(PROG_KEY, JSON.stringify({xp, stage2Cleared, clearedBranch})); } catch(e) {}
   },[xp, stage2Cleared, clearedBranch]);
@@ -873,6 +878,9 @@ export default function App(){
   }
 
   const q   = qs[qi];
+
+  // ── 今日の復習 ──
+  if(sc==="review") return <ReviewDrill onExit={()=>setSc("title")}/>;
 
   // ── GAME OVER画面 ──
   if(sc==="battle"&&gameOver) return(
@@ -1023,6 +1031,8 @@ export default function App(){
         {/* ── クイズタブ ── */}
         {tab==="quiz"&&(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <StudyPanel onReview={()=>setSc("review")}/>
+
             {/* ── 学習の道しるべ（初見ガイド・各タブへジャンプ） ── */}
             <div style={{background:"linear-gradient(160deg,#0F172A,#1E293B)",borderRadius:10,padding:"11px 12px",marginBottom:2}}>
               <div style={{color:"#F8FAFC",fontSize:11,fontWeight:700}}>🧭 はじめての方へ — 学習の道しるべ</div>
