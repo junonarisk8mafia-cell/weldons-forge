@@ -98,7 +98,7 @@ export function LevelUpEvent({lv, prevLv, onNext}){
 
         <div style={{animation:"evolve 0.9s cubic-bezier(.34,1.56,.64,1) forwards"}}>
           <div style={{animation:"float 2s ease-in-out infinite"}}>
-            <img src={lv.level>=4?"/weldon-levelup-master.png":"/weldon-levelup-normal.png"} alt="WELDON" width={180}
+            <img src={lv.level>=4?"/weldon-levelup-master.webp":"/weldon-levelup-normal.webp"} alt="WELDON" width={180}
               style={{filter:"drop-shadow(0 0 18px rgba(255,229,0,0.8)) drop-shadow(0 0 36px rgba(255,140,0,0.6))"}}/>
           </div>
         </div>
