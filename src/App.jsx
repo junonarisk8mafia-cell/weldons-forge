@@ -70,6 +70,7 @@ const STAGE2_BRANCHES = [
 // STAGE設定（questions.jsのQUIZ_STAGESと対応）
 const MAIN_STAGES = [
   {id:1,  label:"STAGE 1 — JIS入門",       color:"#E85D04", icon:"⚡", unlockXP:0,    enemy:"スラグ鬼",    enemyHP:120, qStageId:1},
+  {id:6,  label:"実技STAGE — TIG・半自動・現代溶接", color:"#0F766E", icon:"🛠️", unlockXP:200, enemy:"ひずみ大魔神", enemyHP:200, qStageId:6},
   {id:3,  label:"STAGE 3 — WES管理技術者", color:"#D97706", icon:"👑", unlockXP:550,  enemy:"ブローホール将軍", enemyHP:240, qStageId:3},
   {id:4,  label:"STAGE 4 — AWS",           color:"#DC2626", icon:"🇺🇸", unlockXP:950,  enemy:"CWI検査鬼",   enemyHP:300, qStageId:4},
   {id:5,  label:"STAGE 5 — IIW国際資格",  color:"#7C3AED", icon:"🌍", unlockXP:1450, enemy:"溶接魔王IWE", enemyHP:400, qStageId:5},
@@ -652,7 +653,7 @@ function Enemy({st, hit, hp, maxHP, exploding}){
     </svg>
   );
 
-  const monsterMap = {"1":slag,"2A":lamellar,"2B":steam,"2C":diver,"3":blowhole,"4":cwi,"5":iweBoss};
+  const monsterMap = {"1":slag,"2A":lamellar,"2B":steam,"2C":diver,"6":steam,"3":blowhole,"4":cwi,"5":iweBoss};
 
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
@@ -974,7 +975,7 @@ export default function App(){
         <div style={{marginTop:6}}>
           <div style={{fontSize:9,letterSpacing:6,color:"#E85D04"}}>WELDON'S</div>
           <div style={{fontSize:32,fontWeight:900,color:"#FFE500",letterSpacing:3}}>FORGE</div>
-          <div style={{fontSize:8,color:"#94A3B8",letterSpacing:2}}>溶接資格RPG｜5STAGE×20問</div>
+          <div style={{fontSize:8,color:"#94A3B8",letterSpacing:2}}>溶接キャリア・資格学習｜全{QUIZ_STAGES.reduce((n,s)=>n+s.questions.length,0)}問</div>
         </div>
         {/* XPバー */}
         <div style={{marginTop:10,background:"rgba(255,255,255,0.08)",borderRadius:10,padding:"9px 14px",maxWidth:280,margin:"10px auto 0"}}>
@@ -1130,7 +1131,7 @@ export default function App(){
               })}
             </div>
 
-            {/* STAGE 3〜5 */}
+            {/* 実技STAGE・STAGE 3〜5 */}
             {MAIN_STAGES.filter(s=>s.id!==1).map(s=>{
               const ok = s.id===3 ? (stage2Cleared&&xp>=s.unlockXP) : xp>=s.unlockXP;
               return(

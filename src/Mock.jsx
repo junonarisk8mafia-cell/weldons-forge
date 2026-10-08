@@ -12,9 +12,14 @@ import { drawQuestions } from "./shuffle";
 const F = "'Courier New',monospace";
 const PASS = 0.6; // 合格ライン60%
 
-// 全問題をフラット化
+// 全問題をフラット化(ステージ間で同じ問題文は1問にまとめる)
 const ALL_Q = [];
-QUIZ_STAGES.forEach(s => s.questions.forEach(q => ALL_Q.push(q)));
+const seenQ = new Set();
+QUIZ_STAGES.forEach(s => s.questions.forEach(q => {
+  if (seenQ.has(q.q)) return;
+  seenQ.add(q.q);
+  ALL_Q.push(q);
+}));
 
 function fmt(sec) {
   const m = Math.floor(sec / 60), s = sec % 60;
