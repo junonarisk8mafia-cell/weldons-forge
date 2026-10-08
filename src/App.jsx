@@ -54,7 +54,8 @@ import { SymbolScreen } from "./Symbol";           // 溶接記号+図面の見�
 import { CalcScreen } from "./Calc";               // 溶接計算ツール
 import { WeaveScreen } from "./Weave";             // ウィービングデモ
 import { recordAnswer } from "./stats";            // 学習記録(localStorage)
-import { StatsScreen } from "./Stats";             // 弱点分析タブ
+import { drawQuestions } from "./shuffle";         // 問題・選択肢シャッフル
+import { StatsScreen } from "./Stats.jsx";             // 弱点分析タブ
 import { MockScreen } from "./Mock";               // 模擬試験タブ
 
 // ============================================================
@@ -83,6 +84,12 @@ function getQuestions(qStageId){
 const FB = "https://docs.google.com/forms/d/e/1FAIpQLSdw5Us-3pXujhPo3DNGjkCO5AC_2Ww2w6_QQla9tQUeS7A60g/viewform";
 const F  = "'Courier New',monospace";
 const MAX_Q = 20;
+
+// 進捗(XP・STAGE2クリア)の永続化
+const PROG_KEY = "weldon_progress_v1";
+function loadProgress(){
+  try { return JSON.parse(localStorage.getItem(PROG_KEY)) || {}; } catch(e) { return {}; }
+}
 
 // ============================================================
 // 敵キャラ（7体個別SVGアート・浮遊アニメ対応）
@@ -702,7 +709,7 @@ const css=`
 // ============================================================
 export default function App(){
   const [sc,   setSc]   = useState("title");
-  const [xp,   setXp]   = useState(0);
+  const [xp,   setXp]   = useState(()=>loadProgress().xp||0);
   const [tab,  setTab]  = useState("quiz");   // title画面のタブ
   const [selSt,setSelSt]= useState(null);
   const [qs,   setQs]   = useState([]);
@@ -725,14 +732,18 @@ export default function App(){
   const [showOpts,setShowOpts]=useState(true);
   const [cur,  setCur]  = useState(0);
   // STAGE2分岐管理
-  const [stage2Cleared,  setStage2Cleared]  = useState(false);
-  const [clearedBranch,  setClearedBranch]  = useState(null);
+  const [stage2Cleared,  setStage2Cleared]  = useState(()=>!!loadProgress().stage2Cleared);
+  const [clearedBranch,  setClearedBranch]  = useState(()=>loadProgress().clearedBranch||null);
   // 演出state
   const [flash,    setFlash]    = useState(null);  // 'red'|'white'|null
   const [gameOver, setGameOver] = useState(false);
   const [victory,  setVictory]  = useState(false);
   const [exploding,setExploding]= useState(false);
   const [wrongAns, setWrongAns] = useState([]);    // 間違えた問題リスト
+
+  useEffect(()=>{
+    try { localStorage.setItem(PROG_KEY, JSON.stringify({xp, stage2Cleared, clearedBranch})); } catch(e) {}
+  },[xp, stage2Cleared, clearedBranch]);
 
   const lv  = getLv(xp);
   const nxt = getNxt(xp);
@@ -746,7 +757,7 @@ export default function App(){
 
   // ── バトル開始 ──
   function startBattle(st){
-    const pool = [...getQuestions(st.qStageId)].sort(()=>Math.random()-0.5).slice(0,20);
+    const pool = drawQuestions(getQuestions(st.qStageId), MAX_Q);
     if(pool.length===0){ alert("問題データが見つかりません（qStageId:"+st.qStageId+"）"); return; }
     setSelSt(st); setQs(pool); setQi(0); setSel(null); setAns([]);
     setEarned(0); setScore(0); setMood("smile");
@@ -761,7 +772,7 @@ export default function App(){
   // ── 弱点復習バトル(間違えた問題プールから出題) ──
   function startReviewBattle(pool){
     if(!pool||pool.length===0){ alert("復習できる問題がまだありません。まずクイズに挑戦しよう！"); return; }
-    const rq = [...pool].sort(()=>Math.random()-0.5).slice(0,20);
+    const rq = drawQuestions(pool, MAX_Q);
     setSelSt({label:"📊 弱点復習",color:"#E85D04",qStageId:-1,enemy:"苦手ポイント",badge:"苦手克服"});
     setQs(rq); setQi(0); setSel(null); setAns([]);
     setEarned(0); setScore(0); setMood("smile");

@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { QUIZ_STAGES } from "./questions";
 import { recordAnswer } from "./stats";
 import { EssayScreen } from "./Essay";
+import { drawQuestions } from "./shuffle";
 
 const F = "'Courier New',monospace";
 const PASS = 0.6; // 合格ライン60%
@@ -15,7 +16,6 @@ const PASS = 0.6; // 合格ライン60%
 const ALL_Q = [];
 QUIZ_STAGES.forEach(s => s.questions.forEach(q => ALL_Q.push(q)));
 
-function shuffle(a) { return [...a].sort(() => Math.random() - 0.5); }
 function fmt(sec) {
   const m = Math.floor(sec / 60), s = sec % 60;
   return m + ":" + String(s).padStart(2, "0");
@@ -38,7 +38,7 @@ export function MockScreen() {
   useEffect(() => () => clearInterval(timer.current), []);
 
   function start(n, minutes) {
-    const pool = shuffle(ALL_Q).slice(0, Math.min(n, ALL_Q.length));
+    const pool = drawQuestions(ALL_Q, n);
     setQs(pool);
     setAns(new Array(pool.length).fill(null));
     setCur(0);
